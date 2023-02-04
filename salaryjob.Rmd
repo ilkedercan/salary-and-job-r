@@ -1,0 +1,287 @@
+---
+title: "Data science job salary"
+author: "ilke"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+![](https://peakup.org/wp-content/uploads/2017/09/daa_science2-750x451.jpg)
+
+**Veri setine erişmek için [data-job-salary](https://www.kaggle.com/datasets/milanvaddoriya/data-science-job-salary) sitesini ziyaret edebilirsiniz.**
+
+# 1.Kütüphanelerin yüklenmesi
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(funModeling)
+library(gridExtra)
+library(magrittr)
+library(scales)
+library(plotrix)
+library(RColorBrewer)
+library(readr)
+library(maps)
+library(highcharter)
+library(dplyr)
+library(tidyverse)
+library(magrittr)
+library(DataExplorer)
+library(maps)
+library(plotly)
+library(DT)
+library(tidytext)
+library(gridExtra)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(tidyr)
+library(d3Tree)
+```
+
+# 2. Verisetini yükleme
+
+```{r, warning=FALSE, message=FALSE}
+getwd()
+
+setwd("/home/ilke/Downloads")
+
+df<- read.csv("datascience_salaries (1).csv",sep=",", header=TRUE,stringsAsFactors = FALSE)
+```
+
+# 3. Keşifci Veri Analizi(Veriseti genel yapısı hakkında bilgi edinme)
+
+```{r, warning=FALSE, message=FALSE}
+glimpse(df)
+```
+
+```{r, warning=FALSE,message=FALSE}
+summary(df)
+```
+
+```{r}
+plot_intro(df)
+```
+## 3.1  veri ön işleme/ temizleme
+
+```{r, echo= FALSE, warning=FALSE}
+df[df==""] <- NA #Eksik gözlem olmadığını görmüştük. ancak Na/Null girilmemiş ama boş gözlem varsa NA ekleyerek tekrar kontrol sağlanır.
+
+sum(is.na(df))  #veride eksik gözlem yok.
+```
+
+```{r, warning=FALSE,message=FALSE}
+df$X <- NULL   #gereksiz satır silme
+```
+
+```{r, warning=FALSE, message=FALSE}
+#%99unun maaşı USD türünden girili. Euro ve diğer olanları çıkardım.
+df <-df %>%
+  filter(salary_currency == "USD")
+```
+
+## 3.2 Genel istatistik/grafik
+### 3.1.1 Sürekli Değişkenlerin Özet Bazı İstatistikleri
+```{r loadlib, echo=T, results='hide', message=F, warning=F}
+profiling_num(df)
+```
+### 3.1.2 Genel Histogram
+```{r, warning=FALSE, message=FALSE}
+plot_num(df)  #genel histogram
+```
+
+
+
+```{r}
+#veri setiyle ilgili genel bir önizleme için
+d3tree(list(root = df2tree(rootname ='title', 
+                           struct = as.data.frame(df)), 
+                           layout = 'collapse'))
+```
+
+
+
+
+```{r}
+ggplot(df,aes(job_title, fill=experience_level))+
+  geom_bar()+
+  coord_polar(theta = "y")
+```
+
+```{r}
+title_count<- df %>% group_by(job_title) %>% tally() %>% arrange(n, decreasing=T)
+title_count
+```
+
+
+```{r}
+#mesleklerde intern dağılımı nasıl?
+#Big data'da intern olarak çalışan yok
+ggplot(data = df) + 
+  geom_bar(mapping = aes(x = job_title, fill = job_type), position = "dodge") + scale_fill_manual(values = c("blue","red"))+
+  theme_bw()
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
+#mesleklere göre deneyimleri görebileceğimiz grafik
+ggplot(data = df) + 
+  geom_bar(mapping = aes(x = job_title, fill = experience_level), position = "dodge") + scale_fill_manual(values = c("yellow", "red", "blue","magenta"))+
+  theme_bw() 
+```
+
+
+
+
+```{r}
+#verisetine çalışma yeri olarak remote/no remote ifade edecek şekilde remote=0, no remote=1 olacak şekilde yeni bir sütuna eklendi.
+ds <- df %>% mutate(remote = ifelse(grepl("remote",tolower(location) ), "1", "0"))
+```
+
+```{r}
+#131 kişi remote olarak çalışmaktadır.
+remote_counts <- count(ds, remote)
+remote_counts
+```
+```{r, warning=FALSE, message=FALSE}
+write.csv(ds, file = "/home/ilke/Downloads/ödev.csv", row.names = FALSE)
+#remote eklenmiş halini kaydetme
+```
+
+
+```{r}
+# çalışanların ½11'i remote olarak çalışmaktadır.
+data <- c(131, 1026)
+data_percent <- prop.table(data) * 100
+library(ggplot2)
+data_df <- data.frame(remote = c("Remote", "No remote"), count = c(131, 1026))
+
+ggplot(data = data_df, aes(x = "", y = count, fill = remote)) + 
+  geom_bar(width = 1, stat = "identity") + 
+  coord_polar("y", start = 0) + 
+  ggtitle("Location Pie Chart") +
+  scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
+  theme_void() + 
+  labs(fill = "location", title = "Location Pie Chart") +
+  geom_text(aes(label = paste0(round(data_percent), "%")), position = position_stack(vjust = 0.5))
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
+#en çok çalışılan lokasyonlara bakalım
+top_10_locations <- df %>% group_by(location) %>% 
+  summarise(count=n()) %>% 
+  arrange(desc(count)) %>% 
+  top_n(10)
+top_10_locations
+```
+```{r}
+ggplot(data = top_10_locations, aes(x = location, y = count, colour = location)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Lokasyon ve Count") +
+  xlab("Lokasyon") +
+  ylab("Count")
+```
+
+
+```{r}
+#Çalışma tipine göre sıklıklar ve maaş istatistikleri
+salary_by_jobtype <- df %>% group_by(job_type) %>% 
+  summarise(count= n(),
+            min_salary=min(salary),
+            max_salary=max(salary),
+            mean_salary=mean(salary)) %>% 
+  arrange(desc(mean_salary)) %>% 
+  mutate(rank = rank(-mean_salary))
+salary_by_jobtype
+```
+
+
+```{r}
+#mesleğe göre meslek sıklıkları ve maaş istatistikleri
+salary_by_job <- df %>% group_by(job_title) %>% 
+  summarise(count= n(),
+            min_salary=min(salary),
+            max_salary=max(salary),
+            mean_salary=mean(salary),
+            median_salary=median(salary)) %>% 
+  arrange(desc(mean_salary)) %>% 
+  mutate(rank = rank(-mean_salary))
+salary_by_job
+```
+
+
+
+```{r}
+#deneyim seviyesine göre maaş istatistikleri
+salary_by_exp <- df %>% group_by(experience_level) %>% summarise(count= n(),
+            min_salary=min(salary),
+            max_salary=max(salary),
+            mean_salary=mean(salary)) %>% 
+  arrange(desc(mean_salary)) %>% 
+  mutate(rank = rank(-mean_salary))
+salary_by_exp
+```
+
+```{r, warning=FALSE, message=FALSE}
+#meslek ve çalışma tiplerine göre maaş ortalamaları
+a <- df %>% 
+  select(job_title, salary, job_type) %>%
+  group_by(job_title, job_type) %>%
+  summarise(avg_income = mean(salary))
+a
+```
+
+
+
+
+```{r}
+#remote çalışma durumuna göre maaş istatistikleri
+salary_by_remote <- ds %>% group_by(remote) %>% 
+  summarise(count= n(),
+            min_salary=min(salary),
+            max_salary=max(salary),
+            mean_salary=mean(salary)) %>% 
+  arrange(desc(mean_salary)) %>% 
+  mutate(rank = rank(-mean_salary))
+salary_by_remote
+```
+
+
+
+```{r}
+#meslek ve deneyimlere göre maaşın saçılım grafiği
+saçılım<- plot_ly(ds , x= ~experience_level , y = ~salary , z= ~job_title , color = ~job_title , text = ~salary ) %>%
+  add_markers() %>%
+  layout(
+    scene = list(xaxis = list(title = "LEVEL"),
+                 yaxis= list(title = "SALARY"),
+                 zaxis = list (title = "TİTLE"))
+  )
+saçılım
+```
+
+```{r}
+p1 <- plot_ly(ds, y = ~salary, color = ~experience_level, colors = c('#F8766D', '#00BA38','#619CFF'), legendgroup = ~job_title) %>% 
+  add_boxplot(x = ~job_title)
+
+p1
+```
+
+```{r}
+#mesleklere göre remote/no remeto maaş
+ggplot(ds, aes(x = remote, y = salary, fill =job_title, colour = job_title)) + 
+geom_boxplot(outlier.colour = NA) + xlab("remote/no remote") + ylab("salary") 
+
+```
+
+
+
+
