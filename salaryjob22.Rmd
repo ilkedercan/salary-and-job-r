@@ -1,0 +1,204 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    theme: cosmo
+---
+
+Koda [flexdashboard](https://github.com/ilkedercan/salary-and-job-r) ulaşabilirsiniz.
+
+
+
+Veri bilimcisi rollerine ilişkin 1171 gözlem vardı. Veriler temiz ve tüm gözlemler kaydedildi. EUR ve GBP cinsinden kaydedilen birkaç maaş, veri setinden çıkarılarak 1157 gözleme düşürüldü
+
+Çoğu, kendilerini veri analisti veya veri bilimcisi olarak tanımlıyor. 
+Yaklaşık 4 kişiden 1'i makine öğrenimi rolündeyken, çok azı makine öğrenimi operasyonları rolünde. 
+
+Rollerin yaklaşık %3'ü stajyerler içindi. Veri setindeki gözlemlerin büyük çoğunluğu Full Time çalışan gözlemlerden oluşmaktadır.
+
+Yanıt verenlerin çoğu (%62) üst düzey pozisyonlarda çalışıyordu ve önemsiz bir %1'i yöneticiydi. 
+
+Rollerin %10'u giriş seviyesindeyken, rollerin dörtte biri orta düzey taşıyıcı veri bilimcileri içindi.
+
+Konumları remote/ remote olmama üzerine sınıflandırarak remote= 0, remote olmayan=1 olarak yeni sütuna eklendi.
+Konumların çoğu Amerika Birleşik Devletleri'ne (New York, San-Francisco) dağılmıştı, ardından Birleşik Krallık (Çoğunlukla Londra'da) ve iyi bir sayı da Avrupa'da (Paris, Berlin, Barselona). 
+Bu rollerin yaklaşık %11'i uzaktı.
+
+
+Bir Veri Bilimcisinin Ortalama Maaşı 65.000 USD civarındadır ve medyan 63.000 USD'ye çok yakındır. Bazıları 30.000 USD kadar düşük, birkaçı ise 200.000 USD'den fazla kazanıyor. 
+En Yüksek Kazananlar, Makine öğrenimi operasyonları, Makine öğrenimi ve Veri Bilimcisi ile Yönetici veya üst düzey rollerde bulunanlardır. 
+
+Uzaktan çalışanlar, uzak olmayan çalışanlardan biraz daha yüksek kazanma eğilimindedir. 
+
+```{r setup, include=FALSE}
+getwd()
+
+setwd("/home/ilke/Downloads")
+
+df<- read.csv("ödev.csv",sep=",", header=TRUE,stringsAsFactors = FALSE)
+```
+
+
+```{r}
+library(flexdashboard)
+library(ggplot2)
+library(readr)
+library(highcharter)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(funModeling)
+library(gridExtra)
+library(magrittr)
+library(scales)
+library(plotrix)
+library(RColorBrewer)
+library(readr)
+library(maps)
+library(highcharter)
+library(dplyr)
+library(tidyverse)
+library(magrittr)
+library(DataExplorer)
+library(maps)
+library(plotly)
+library(DT)
+library(tidytext)
+library(gridExtra)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(tidyr)
+library(d3Tree)
+```
+
+
+
+
+
+
+Sample Layout 1 {data-orientation=rows data-icon="fa-bar-chart"}
+=====================================
+
+## Row 1 {data-height=110}
+
+### kişi sayısı
+
+```{r}
+valueBox(1122, icon = "fa-heart", color="rgb(100,100,100)")
+```
+### Title Adet
+
+```{r}
+valueBox("5", icon = "fa-heart", color="rgb(200,100,100)")
+```
+### Tip Adedi
+
+```{r}
+valueBox("4", icon = "fa-heart",color="rgb(26,110,204)")
+```
+
+## Row 2 {data-height=400}  
+
+### Salary-title-type
+
+```{r}
+saçılım<- plot_ly(df , x= ~experience_level , y = ~salary , z= ~job_title , color = ~job_title , text = ~salary ) %>%
+  add_markers() %>%
+  layout(
+    scene = list(xaxis = list(title = "LEVEL"),
+                 yaxis= list(title = "SALARY"),
+                 zaxis = list (title = "TİTLE"))
+  )
+saçılım
+```
+
+
+    
+
+## Row 3 {data-height=250} 
+
+
+### Title Sıklıkları
+
+```{r}
+#iş sıklıkları
+tmp <- df %>% group_by(job_title) %>% tally() %>% mutate(Percent = n/sum(n))
+tmp$colors <- c("#d35400", "#2980b9", "#2ecc71","red", "magenta")
+tmp <- arrange(tmp,desc(Percent))
+highchart() %>% 
+  hc_xAxis(categories = c("Data scientist", "Data analyst", "Machine learning", "Big data", "ML Ops")) %>%
+  hc_yAxis(title=list(text='Percentage')) %>%
+  hc_add_series(tmp, "bar", hcaes(x = job_title, y = Percent, color=colors)) %>% 
+  hc_tooltip(pointFormat = "{point.y:.2f}</br>",shared = FALSE) %>% 
+  hc_legend(enabled=FALSE)
+```
+
+### Type Sıklıkları
+
+```{r}
+#type sıklıkları
+tmp2 <- df %>% group_by(experience_level) %>% tally() %>% mutate(Percent = n/sum(n))
+tmp2$colors <- c("#d35400", "#2980b9", "#2ecc71","magenta")
+tmp2 <- arrange(tmp2,desc(Percent))
+highchart() %>% 
+  hc_xAxis(categories = c("Senior", "Mid", "Entry", "Executive")) %>%
+  hc_yAxis(title=list(text='Percentage')) %>%
+  hc_add_series(tmp2, "bar", hcaes(x = experience_level, y = Percent, color=colors)) %>% 
+  hc_tooltip(pointFormat = "{point.y:.2f}</br>",shared = FALSE) %>% 
+  hc_legend(enabled=FALSE)
+
+```
+
+
+
+
+
+Sample Layout 2 {data-icon="fa-area-chart"}
+=====================================  
+
+
+Column {data-width=250}
+-------------------------------------
+
+### ortak
+```{r}
+ggplot(data = df) + 
+  geom_bar(mapping = aes(x = job_title, fill = experience_level), position = "dodge")
+```
+
+### remote
+```{r}
+data <- c(131, 1026)
+data_percent <- prop.table(data) * 100
+library(ggplot2)
+data_df <- data.frame(remote = c("Remote", "No remote"), count = c(131, 1026))
+
+ggplot(data = data_df, aes(x = "", y = count, fill = remote)) + 
+  geom_bar(width = 1, stat = "identity") + 
+  coord_polar("y", start = 0) + 
+  ggtitle("Location Pie Chart") +
+  scale_fill_manual(values = c("#00BFC4", "#F8766D")) +
+  theme_void() + 
+  labs(fill = "location", title = "Location Pie Chart") +
+  geom_text(aes(label = paste0(round(data_percent), "%")), position = position_stack(vjust = 0.5))
+```
+
+### lokasyon
+```{r}
+top_10_locations <- df %>% group_by(location) %>% 
+  summarise(count=n()) %>% 
+  arrange(desc(count)) %>% 
+  top_n(10)
+
+ggplot(data = top_10_locations, aes(x = location, y = count, colour = location)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Lokasyon ve Count") +
+  xlab("Lokasyon") +
+  ylab("Count")
+```
+
