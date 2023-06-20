@@ -9,4 +9,4 @@ R final
 http://rpubs.com/ilke/998962
 
 # r markdown html versiyonu için linke tıklayabilirsiniz
-http://rpubs.com/ilke/998958
+http://rpubs.com/ilke/998958  
